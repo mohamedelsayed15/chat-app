@@ -11,14 +11,17 @@ const app = (0, express_1.default)();
 const server = http_1.default.createServer(app);
 const io = socketio(server);
 app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
-let count = 0;
 io.on('connection', (socket) => {
-    console.log('new connection');
-    socket.emit('countUpdated', count);
-    socket.on('increment', () => {
-        count++;
-        socket.emit('countUpdated', count);
-        io.emit('countUpdated', count);
+    // sends a message for the client connection
+    socket.emit('message', 'Welcome!');
+    // sends a message for all clients except the one triggered it 
+    socket.broadcast.emit('message', 'a new user has joined');
+    socket.on('sendMessage', (message) => {
+        //sends the message for all clients
+        io.emit('message', message);
+    });
+    socket.on('disconnect', () => {
+        io.emit('message', ' a user has left');
     });
 });
 app.get('/', (req, res, next) => {
