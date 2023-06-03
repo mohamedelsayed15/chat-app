@@ -10,11 +10,17 @@ const $messages = document.getElementById('messages')
 const messagesTemplate = document.querySelector('#message-template').innerHTML
 const locationTemplate = document.querySelector('#location-template').innerHTML
 
+//options 
+const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
 
+socket.emit('join', { username, room })
 
 socket.on('location', (location) => {
     console.log(location)
-    const html = Mustache.render(locationTemplate, { location })
+    const html = Mustache.render(locationTemplate, {
+        location: location.text,
+        createdAt: moment(location.createdAt).format('h:mm a')// 7:05 pm
+    })
     $messages.insertAdjacentHTML('beforeend', html)
 
 })
@@ -22,7 +28,10 @@ socket.on('location', (location) => {
 socket.on('message', (message) => {
     console.log(message)
 
-    const html = Mustache.render(messagesTemplate, { message })
+    const html = Mustache.render(messagesTemplate, {
+        message: message.text,
+        createdAt: moment(message.createdAt).format('h:mm a')// 7:05 pm
+    })
     $messages.insertAdjacentHTML('beforeend',html)
 })
 

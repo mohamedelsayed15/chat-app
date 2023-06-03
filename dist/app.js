@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const http_1 = __importDefault(require("http"));
+const { generateMessage } = require('./utils/messages');
 const Filter = require('bad-words');
 const socketio = require("socket.io");
 const app = (0, express_1.default)();
@@ -17,9 +18,13 @@ app.get('/', (req, res, next) => {
 });
 io.on('connection', (socket) => {
     // sends a message for the client connection
-    socket.emit('message', 'Welcome!');
+    socket.emit('message', generateMessage('Welcome!'));
     // sends a message for all clients except the one triggered it 
-    socket.broadcast.emit('message', 'a new user has joined');
+    socket.broadcast.emit('message', generateMessage('a new user has joined'));
+    socket.on('join', ({ username, room }) => {
+        //could only be used on the server
+        socket.join(room);
+    });
     socket.on('sendMessage', (message, callback) => {
         const filter = new Filter();
         if (filter.isProfane(message)) {
@@ -27,16 +32,16 @@ io.on('connection', (socket) => {
         }
         else {
             //sends the message for all clients
-            io.emit('message', message);
+            io.emit('message', generateMessage(message));
             callback();
         }
     });
     socket.on('sendLocation', (position, callback) => {
-        io.emit('location', `https://google.com/maps/?q=${position.latitude},${position.longitude}`);
+        io.emit('location', generateMessage(`https://google.com/maps/?q=${position.latitude},${position.longitude}`));
         callback();
     });
     socket.on('disconnect', () => {
-        io.emit('message', ' a user has left');
+        io.emit('message', generateMessage('a user has left'));
     });
     socket.on("connect_error", (err) => {
         console.log(`connect_error due to ${err.message}`);
