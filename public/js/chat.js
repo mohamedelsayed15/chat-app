@@ -1,3 +1,4 @@
+
 const socket = io()
 
 const $messageForm = document.getElementById('message-form')
@@ -9,15 +10,29 @@ const $messages = document.getElementById('messages')
 // templates
 const messagesTemplate = document.querySelector('#message-template').innerHTML
 const locationTemplate = document.querySelector('#location-template').innerHTML
-
+const sidebarList = document.querySelector('#sidebar-template').innerHTML
 //options 
 const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
 
-socket.emit('join', { username, room })
+socket.emit('join', { username, room }, (error) => {
+    if (error) {
+        alert(error)
+        location.href = '/'
+    }
+})
+
+socket.on('roomUsers', ({ room, users }) => {
+    const html = Mustache.render(sidebarList, {
+        room,
+        users
+    })
+    document.querySelector('#sidebar').innerHTML = html
+})
 
 socket.on('location', (location) => {
-    console.log(location)
+
     const html = Mustache.render(locationTemplate, {
+        username:location.username,
         location: location.text,
         createdAt: moment(location.createdAt).format('h:mm a')// 7:05 pm
     })
@@ -26,9 +41,9 @@ socket.on('location', (location) => {
 })
 
 socket.on('message', (message) => {
-    console.log(message)
 
     const html = Mustache.render(messagesTemplate, {
+        username:message.username,
         message: message.text,
         createdAt: moment(message.createdAt).format('h:mm a')// 7:05 pm
     })
@@ -52,9 +67,9 @@ $messageForm.addEventListener('submit', (e) => {
         $messageFormInput.focus()
 
         if (error) {
-            return console.log(error)
+            return alert(error)
         }
-        console.log("delivered")
+
     })
 
 })
