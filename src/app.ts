@@ -75,7 +75,6 @@ io.on('connection', (socket: any) => {
         }
     })
 
-
     socket.on(
         'sendLocation',
         (position: { latitude: number, longitude: number }, callback: Function) => {

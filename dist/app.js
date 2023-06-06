@@ -25,7 +25,6 @@ io.on('connection', (socket) => {
         if (error) {
             return callback(error);
         }
-        console.log(User.getUsersInRoom(user.room));
         socket.join(user.room);
         //sending welcome message to user only has nothing to do with rooms 
         socket.emit('message', generateMessage(`Welcome ${user.username}`, user.username));
