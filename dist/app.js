@@ -6,26 +6,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const path_1 = __importDefault(require("path"));
 const http_1 = __importDefault(require("http"));
+const cors_1 = __importDefault(require("cors"));
+const auth_route_1 = __importDefault(require("./routes/auth.route"));
+const user_route_1 = __importDefault(require("./routes/user.route"));
 require('dotenv').config();
+require('./utils/mongoose');
 const User = require('./utils/users.js');
 const { generateMessage } = require('./utils/messages');
 const Filter = require('bad-words');
 const socketio = require("socket.io");
 const app = (0, express_1.default)();
+app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 const server = http_1.default.createServer(app);
 const io = socketio(server);
 app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
+app.use('/auth', auth_route_1.default);
+app.use('/user', user_route_1.default);
 app.get('/', (req, res, next) => {
     res.render('../public/index.html');
 });
-let currentRoom;
+// sends a message for the client connection
+//socket.emit('message',generateMessage('Welcome!'))
+// sends a message for all clients except the one triggered it 
+//socket.broadcast.emit('message', generateMessage('a new user has joined'))
 io.on('connection', (socket) => {
     console.log("a connection");
-    // join
-    //could only be used on the server
     socket.on('join', (data, callback) => {
         try {
+            // validation
             if (!data.username || !data.room) {
                 return socket.disconnect();
             }
@@ -56,13 +65,13 @@ io.on('connection', (socket) => {
         }
     });
     socket.on('sendMessage', (message, callback) => {
-        if (!message.text) {
+        // validation 
+        if (!socket.id || !message.text) {
             return socket.disconnect();
         }
-        console.log(socket.id);
         const text = message.text;
         const user = User.findUser(socket.id);
-        console.log(user);
+        // case no user found
         if (!user) {
             return socket.disconnect();
         }
@@ -77,7 +86,15 @@ io.on('connection', (socket) => {
         }
     });
     socket.on('sendLocation', (position, callback) => {
+        // validation 
+        if (!socket.id || !position.latitude || !position.longitude) {
+            return socket.disconnect();
+        }
         const user = User.findUser(socket.id);
+        // case no user found
+        if (!user) {
+            return socket.disconnect();
+        }
         io.to(user.room).emit('location', generateMessage(`https://google.com/maps/?q=${position.latitude},${position.longitude}`, user.username));
         callback();
     });

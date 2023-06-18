@@ -1,25 +1,33 @@
 import express from "express"
 import path from 'path'
 import http from 'http'
+import cors from 'cors'
+import authRoutes from './routes/auth.route'
+import userRoutes from './routes/user.route'
 
 require('dotenv').config()
+require('./utils/mongoose')
+
 const User = require('./utils/users.js')
 const { generateMessage } = require('./utils/messages')
 const Filter = require('bad-words')
 const socketio = require("socket.io")
-
 const app = express()
+
+app.use(cors())
 app.use(express.json())
-
 const server = http.createServer(app)
-
 const io = socketio(server)
 
 app.use(express.static(path.join(__dirname, '../public')))
 
+app.use('/auth', authRoutes)
+app.use('/user', userRoutes)
+
 app.get('/', (req, res, next) => {
     res.render('../public/index.html')
 })
+
 
 // sends a message for the client connection
         //socket.emit('message',generateMessage('Welcome!'))
@@ -164,10 +172,6 @@ io.on('connection', (socket: any) => {
             }
         });
     })
-    
-
-
-
 
 server.listen(process.env.PORT, () => {
     console.log(process.env.PORT)
