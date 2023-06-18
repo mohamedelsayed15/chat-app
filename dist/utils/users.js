@@ -2,8 +2,13 @@
 const users = [];
 // addUser, removeUser, findUser, getUsersInRoom
 exports.addUser = ({ id, username, room }) => {
-    username = username.trim().toLowerCase();
-    room = room.trim().toLowerCase();
+    try {
+        username = username.trim().toLowerCase();
+        room = room.trim().toLowerCase();
+    }
+    catch (e) {
+        console.log(e);
+    }
     console.log(username, room);
     //validation
     if (!username || !room) {
