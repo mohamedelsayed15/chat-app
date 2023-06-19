@@ -10,7 +10,11 @@ router.post(
     auth,
     userController.requestToConnectWithOtherUser
     )
-
+router.post(
+    '/accept-request-to-connect',
+    auth,
+    userController.acceptRequestToConnect
+    )
 
 
 export default router

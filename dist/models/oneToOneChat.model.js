@@ -30,5 +30,5 @@ const schema = new mongoose_1.default.Schema({
     timestamps: true
 });
 //===============================================================
-const Chat = mongoose_1.default.model('Chat', schema);
-module.exports = Chat;
+const RoomOneToOne = mongoose_1.default.model('RoomOneToOne', schema);
+exports.default = RoomOneToOne;

@@ -22,14 +22,12 @@ const schema = new mongoose.Schema({
             default: Date.now()
         }
     }]
-    
-
-
 }, {
     timestamps: true
 })
 
 
 //===============================================================
-const Chat = mongoose.model('Chat', schema)
-module.exports = Chat
+const RoomOneToOne = mongoose.model('RoomOneToOne', schema)
+
+export default RoomOneToOne
