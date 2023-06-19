@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.auth = void 0;
+exports.jwtVerify = exports.auth = void 0;
 const jwt = require('jsonwebtoken');
 const user_model_1 = require("../models/user.model");
 const auth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -22,7 +22,7 @@ const auth = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () 
         }
         headerToken = headerToken.substring(7);
         //custom function (promise) 
-        const decoded = yield jwtVerify(headerToken);
+        const decoded = yield (0, exports.jwtVerify)(headerToken);
         req.user = yield user_model_1.User.findById(decoded._id);
         req.token = headerToken;
         next();
@@ -42,3 +42,4 @@ const jwtVerify = (headerToken) => {
         });
     });
 };
+exports.jwtVerify = jwtVerify;

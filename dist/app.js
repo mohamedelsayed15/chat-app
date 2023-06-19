@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -9,9 +18,11 @@ const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const auth_route_1 = __importDefault(require("./routes/auth.route"));
 const user_route_1 = __importDefault(require("./routes/user.route"));
+const auth_1 = require("./middleware/auth");
+const user_model_1 = require("./models/user.model");
+const oneToOneChat_model_1 = __importDefault(require("./models/oneToOneChat.model"));
 require('dotenv').config();
 require('./utils/mongoose');
-const User = require('./utils/users.js');
 const { generateMessage } = require('./utils/messages');
 const Filter = require('bad-words');
 const socketio = require("socket.io");
@@ -32,82 +43,75 @@ app.get('/', (req, res, next) => {
 //socket.broadcast.emit('message', generateMessage('a new user has joined'))
 io.on('connection', (socket) => {
     console.log("a connection");
-    socket.on('join', (data, callback) => {
+    socket.on('join', (data, callback) => __awaiter(void 0, void 0, void 0, function* () {
         try {
+            console.log(socket.id);
             // validation
-            if (!data.username || !data.room) {
+            if (!data.token || !data.roomId) {
                 return socket.disconnect();
             }
-            const { username, room } = data;
-            console.log("joined room " + room);
-            const { error, user } = User.addUser({ id: socket.id, username, room });
-            if (error) {
-                console.log(error);
-                //return callback && callback(error)
+            const { token, roomId } = data;
+            const decoded = yield (0, auth_1.jwtVerify)(token);
+            const [user, room] = yield Promise.all([
+                user_model_1.User.findById(decoded._id),
+                oneToOneChat_model_1.default.findById(roomId)
+            ]);
+            if (!user || !room) {
+                return socket.disconnect();
             }
-            socket.join(user.room);
-            //sending welcome message to user only has nothing to do with rooms 
-            socket.emit('message', generateMessage(`Welcome ${user.username}`, user.username));
-            // broadcasting a user has joined doesn't appear to user triggered it
-            socket.broadcast.to(user.room).emit('message', generateMessage(`${user.username} has joined`, user.username));
-            io.to(user.room).emit('roomUsers', {
-                room: user.room,
-                users: User.getUsersInRoom(user.room)
-            });
-            /*emit for users in room except the user triggered action
-            socket.broadcast.to(room).emit
-    
-            emit for users in a certain room
-            socket.to(room).emit*/
+            if (room.userOne.toString() !== decoded._id
+                && room.userTwo.toString() !== decoded._id) {
+                console.log("ssssss");
+                return socket.disconnect();
+            }
+            socket.join(roomId);
         }
         catch (e) {
             console.log(e);
+            socket.disconnect();
         }
-    });
-    socket.on('sendMessage', (message, callback) => {
-        // validation 
-        if (!socket.id || !message.text) {
-            return socket.disconnect();
+    }));
+    socket.on('sendMessage', (message, callback) => __awaiter(void 0, void 0, void 0, function* () {
+        try {
+            console.log(socket.id);
+            // validation
+            if (!message.token || !message.roomId || !message.text) {
+                return socket.disconnect();
+            }
+            const { token, roomId, text } = message;
+            const decoded = yield (0, auth_1.jwtVerify)(token);
+            const [user, room] = yield Promise.all([
+                user_model_1.User.findById(decoded._id),
+                oneToOneChat_model_1.default.findById(roomId)
+            ]);
+            if (!user || !room) {
+                return socket.disconnect();
+            }
+            if (room.userOne.toString() !== decoded._id
+                && room.userTwo.toString() !== decoded._id) {
+                console.log("ssssss");
+                return socket.disconnect();
+            }
+            const filter = new Filter();
+            if (filter.isProfane(message.text)) {
+                return callback('Profanity is not allowed');
+            }
+            else {
+                const generatedMessage = generateMessage(text, user.name);
+                room.messages.push(generatedMessage);
+                yield room.save();
+                //sends the message for all clients
+                io.to(room._id.toString()).emit('message', generatedMessage);
+                return callback && callback();
+            }
         }
-        const text = message.text;
-        const user = User.findUser(socket.id);
-        // case no user found
-        if (!user) {
-            return socket.disconnect();
+        catch (e) {
+            console.log(e);
+            socket.disconnect();
         }
-        const filter = new Filter();
-        if (filter.isProfane(text)) {
-            return callback('Profanity is not allowed');
-        }
-        else {
-            //sends the message for all clients
-            io.to(user.room).emit('message', generateMessage(text, user.username));
-            return callback && callback();
-        }
-    });
-    socket.on('sendLocation', (position, callback) => {
-        // validation 
-        if (!socket.id || !position.latitude || !position.longitude) {
-            return socket.disconnect();
-        }
-        const user = User.findUser(socket.id);
-        // case no user found
-        if (!user) {
-            return socket.disconnect();
-        }
-        io.to(user.room).emit('location', generateMessage(`https://google.com/maps/?q=${position.latitude},${position.longitude}`, user.username));
-        callback();
-    });
+    }));
     socket.on('disconnect', () => {
         console.log("a disconnection");
-        const user = User.removeUser(socket.id);
-        if (user) {
-            io.to(user.room).emit('roomUsers', {
-                room: user.room,
-                users: User.getUsersInRoom(user.room)
-            });
-            io.to(user.room).emit('message', generateMessage(`${user.username} has left`));
-        }
     });
     socket.on("error", (err) => {
         if (err && err.message === "unauthorized event") {

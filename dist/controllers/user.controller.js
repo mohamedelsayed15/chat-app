@@ -31,7 +31,7 @@ exports.requestToConnectWithOtherUser = (req, res, next) => __awaiter(void 0, vo
             .findIndex((contact) => { var _a; return ((_a = contact.contactId) === null || _a === void 0 ? void 0 : _a.toString()) === userId; });
         if (doesExistInContacts !== -1) {
             return res.status(409).json({
-                error: "conflict a request has already been sent"
+                error: "conflict user is already a contact"
             });
         }
         const user = yield user_model_1.User.findById({ _id: userId });
@@ -86,10 +86,6 @@ exports.acceptRequestToConnect = (req, res, next) => __awaiter(void 0, void 0, v
         let room = new oneToOneChat_model_1.default({
             userOne: user._id,
             userTwo: req.user._id,
-        });
-        // send confirm message
-        room.messages.push({
-            message: "You can Start Chatting"
         });
         // save the room user 1 and user 2
         const [saveRoom, saveUser1, saveUser2] = yield Promise.all([

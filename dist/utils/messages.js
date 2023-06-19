@@ -1,8 +1,8 @@
 "use strict";
 exports.generateMessage = (text, username) => {
     return {
-        text,
-        username,
+        message: text,
+        createdBy: username,
         createdAt: new Date().getTime()
     };
 };

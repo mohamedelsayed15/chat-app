@@ -17,6 +17,10 @@ const schema = new mongoose_1.default.Schema({
         ref: 'User'
     },
     messages: [{
+            createdBy: {
+                type: String,
+                required: true
+            },
             message: {
                 type: String,
                 required: true,

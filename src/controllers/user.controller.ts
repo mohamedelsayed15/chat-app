@@ -87,10 +87,6 @@ exports.acceptRequestToConnect = async (req: any, res:Response, next:NextFunctio
             userOne: user._id,
             userTwo: req.user._id,
         })
-        // send confirm message
-        room.messages.push({
-            message: "You can Start Chatting"
-        })
         // save the room user 1 and user 2
         const [saveRoom, saveUser1, saveUser2] = await Promise.all([
             room.save(),

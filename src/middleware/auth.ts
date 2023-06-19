@@ -26,7 +26,7 @@ export const auth = async (req:any, res:Response, next:NextFunction) => {
         console.log(e)
     }
 }
-const jwtVerify = (headerToken: string) => {
+export const jwtVerify = (headerToken: string) => {
     
     return new Promise((resolve, reject) => {
         jwt.verify(

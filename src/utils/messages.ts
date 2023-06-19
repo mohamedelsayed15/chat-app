@@ -1,7 +1,7 @@
 exports.generateMessage = (text: string, username: string) => {
     return {
-        text,
-        username,
+        message:text,
+        createdBy:username,
         createdAt:new Date().getTime()
     }
 }

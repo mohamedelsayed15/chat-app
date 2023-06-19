@@ -13,6 +13,10 @@ const schema = new mongoose.Schema({
         ref: 'User'
     },
     messages: [{
+        createdBy: {
+            type: String,
+            required:true
+        },
         message: {
             type: String,
             required: true,
