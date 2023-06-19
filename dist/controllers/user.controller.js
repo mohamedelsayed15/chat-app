@@ -18,10 +18,18 @@ exports.requestToConnectWithOtherUser = (req, res, next) => __awaiter(void 0, vo
     try {
         const userId = req.body.userId;
         // making sure that the request isn't already there 
-        const doesExist = req.user
+        const doesExistInConnectRequests = req.user
             .connectRequests
             .findIndex((request) => request.user_Id === userId);
-        if (doesExist !== -1) {
+        if (doesExistInConnectRequests !== -1) {
+            return res.status(409).json({
+                error: "conflict a request has already been sent"
+            });
+        }
+        const doesExistInContacts = req.user
+            .contacts
+            .findIndex((contact) => { var _a; return ((_a = contact.contactId) === null || _a === void 0 ? void 0 : _a.toString()) === userId; });
+        if (doesExistInContacts !== -1) {
             return res.status(409).json({
                 error: "conflict a request has already been sent"
             });
@@ -49,21 +57,23 @@ exports.acceptRequestToConnect = (req, res, next) => __awaiter(void 0, void 0, v
         //the id of the specified user
         const user_Id = req.body.user_Id;
         //finding user in the requests list
-        let connectRequests = req.user.connectRequests;
-        const requestIndex = connectRequests.findIndex((request) => request.user_id === user_Id);
+        const requestIndex = req.user.connectRequests.findIndex((request) => request.user_id === user_Id);
         if (requestIndex === -1) {
             return res.status(404).json({
                 error: "couldn't find the specified request"
             });
         }
-        const request = connectRequests[requestIndex];
+        const request = req.user.connectRequests[requestIndex];
+        // second user
         const user = yield user_model_1.User.findById({ _id: request.user_Id });
         if (!user) {
             return res.status(404).json({
                 error: "couldn't find user"
             });
         }
-        req.user.connectRequests = connectRequests.splice(requestIndex, 1);
+        //splice the connectRequests array
+        req.user.connectRequests.splice(requestIndex, 1);
+        // add both of the users to contacts of each other
         req.user.contacts.push({
             contactName: user.name,
             contactId: user._id
@@ -72,13 +82,16 @@ exports.acceptRequestToConnect = (req, res, next) => __awaiter(void 0, void 0, v
             contactName: req.user.name,
             contactId: req.user._id
         });
+        // creating their room
         let room = new oneToOneChat_model_1.default({
             userOne: user._id,
             userTwo: req.user._id,
         });
+        // send confirm message
         room.messages.push({
             message: "You can Start Chatting"
         });
+        // save the room user 1 and user 2
         const [saveRoom, saveUser1, saveUser2] = yield Promise.all([
             room.save(),
             req.user.save(),
