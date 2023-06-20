@@ -73,19 +73,21 @@ exports.acceptRequestToConnect = (req, res, next) => __awaiter(void 0, void 0, v
         }
         //splice the connectRequests array
         req.user.connectRequests.splice(requestIndex, 1);
-        // add both of the users to contacts of each other
-        req.user.contacts.push({
-            contactName: user.name,
-            contactId: user._id
-        });
-        user.contacts.push({
-            contactName: req.user.name,
-            contactId: req.user._id
-        });
         // creating their room
         let room = new oneToOneChat_model_1.default({
             userOne: user._id,
             userTwo: req.user._id,
+        });
+        // add both of the users to contacts of each other
+        req.user.contacts.push({
+            contactName: user.name,
+            contactId: user._id,
+            roomId: room._id
+        });
+        user.contacts.push({
+            contactName: req.user.name,
+            contactId: req.user._id,
+            roomId: room._id
         });
         // save the room user 1 and user 2
         const [saveRoom, saveUser1, saveUser2] = yield Promise.all([

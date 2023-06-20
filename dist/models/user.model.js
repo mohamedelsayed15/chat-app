@@ -59,6 +59,11 @@ const schema = new mongoose_1.default.Schema({
                 type: mongoose_1.default.Types.ObjectId,
                 required: true,
                 ref: 'User'
+            },
+            roomId: {
+                type: mongoose_1.default.Types.ObjectId,
+                required: true,
+                ref: 'RoomOneToOne'
             }
         }],
     connectRequests: [{

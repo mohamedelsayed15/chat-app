@@ -1,6 +1,7 @@
 import { Response,NextFunction } from "express";
 import { User } from '../models/user.model'
 import RoomOneToOne from '../models/oneToOneChat.model'
+
 exports.requestToConnectWithOtherUser = async (req: any, res:Response, next:NextFunction) => {
     try {
         const userId = req.body.userId
@@ -72,21 +73,24 @@ exports.acceptRequestToConnect = async (req: any, res:Response, next:NextFunctio
         }
         //splice the connectRequests array
         req.user.connectRequests.splice(requestIndex, 1);
-        // add both of the users to contacts of each other
-        req.user.contacts.push({
-            contactName: user.name,
-            contactId: user._id
-        })
-
-        user.contacts.push({
-            contactName: req.user.name,
-            contactId: req.user._id
-        })
         // creating their room
         let room:any = new RoomOneToOne({
             userOne: user._id,
             userTwo: req.user._id,
         })
+        // add both of the users to contacts of each other
+        req.user.contacts.push({
+            contactName: user.name,
+            contactId: user._id,
+            roomId: room._id
+        })
+
+        user.contacts.push({
+            contactName: req.user.name,
+            contactId: req.user._id,
+            roomId: room._id
+        })
+        
         // save the room user 1 and user 2
         const [saveRoom, saveUser1, saveUser2] = await Promise.all([
             room.save(),

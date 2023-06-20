@@ -38,44 +38,33 @@ app.get('/', (req, res, next) => {
         
 
 io.on('connection', (socket: any) => {
-
     console.log("a connection")
-    // join
-    //could only be used on the server
     interface data {
         token: string
-        roomId : string
     }
 socket.on('join', async (
     data: data,
     callback: Function
 ) => {
     try {
-        console.log(socket.id)
         // validation
-        if (!data.token || !data.roomId) {
+        if (!data.token) {
             return socket.disconnect();
         }
-        const { token, roomId } = data
+        const { token } = data
 
         const decoded: any = await jwtVerify(token)
+        const user = await User.findById(decoded._id)
 
-        const [user,room]:any = await Promise.all([
-            User.findById(decoded._id),
-            RoomOneToOne.findById(roomId)
-        ]) 
-        if (!user || !room) {
-            return socket.disconnect()
+        if (!user || user.contacts.length === 0) {
+            return 
         }
 
-        if (room.userOne.toString() !== decoded._id
-            && room.userTwo.toString() !== decoded._id) {
-            console.log("ssssss")
-            return socket.disconnect()
+        for (let i = 0; i < user.contacts.length; i++) {
+            socket.join(user.contacts[i].roomId.toString())
         }
 
-        socket.join(roomId)
-
+        return callback && callback()
     } catch (e) {
         console.log(e)
         socket.disconnect()
@@ -90,9 +79,9 @@ socket.on(
     'sendMessage',
     async (message: message, callback: Function) => {
         try {
-            console.log(socket.id)
             // validation
-            if (!message.token || !message.roomId|| !message.text) {
+            if (!message.token || !message.roomId || !message.text) {
+                console.log(1)
                 return socket.disconnect();
             }
             const { token, roomId, text } = message
@@ -104,12 +93,12 @@ socket.on(
                 RoomOneToOne.findById(roomId)
             ]) 
             if (!user || !room) {
+
                 return socket.disconnect()
             }
 
             if (room.userOne.toString() !== decoded._id
                 && room.userTwo.toString() !== decoded._id) {
-                console.log("ssssss")
                 return socket.disconnect()
             }
 
@@ -118,11 +107,12 @@ socket.on(
             if (filter.isProfane(message.text)) {
                 return callback('Profanity is not allowed')
             } else {
+                // function from utils directory
                 const generatedMessage: any = generateMessage(text, user.name)
                 room.messages.push(generatedMessage)
                 await room.save()
                 //sends the message for all clients
-                io.to(room._id.toString()).emit('message', generatedMessage)
+                io.to(room._id.toString()).emit('message',generatedMessage)
                 return callback && callback()
             }
     } catch (e) {

@@ -45,26 +45,23 @@ io.on('connection', (socket) => {
     console.log("a connection");
     socket.on('join', (data, callback) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            console.log(socket.id);
             // validation
-            if (!data.token || !data.roomId) {
+            if (!data.token) {
                 return socket.disconnect();
             }
-            const { token, roomId } = data;
+            const { token } = data;
             const decoded = yield (0, auth_1.jwtVerify)(token);
-            const [user, room] = yield Promise.all([
-                user_model_1.User.findById(decoded._id),
-                oneToOneChat_model_1.default.findById(roomId)
-            ]);
-            if (!user || !room) {
-                return socket.disconnect();
+            console.log(decoded);
+            const user = yield user_model_1.User.findById(decoded._id);
+            console.log(user);
+            if (!user || user.contacts.length === 0) {
+                console.log("no user or contacts");
+                return;
             }
-            if (room.userOne.toString() !== decoded._id
-                && room.userTwo.toString() !== decoded._id) {
-                console.log("ssssss");
-                return socket.disconnect();
+            for (let i = 0; i < user.contacts.length; i++) {
+                socket.join(user.contacts[i].roomId.toString());
             }
-            socket.join(roomId);
+            return callback && callback("joined");
         }
         catch (e) {
             console.log(e);
@@ -73,9 +70,9 @@ io.on('connection', (socket) => {
     }));
     socket.on('sendMessage', (message, callback) => __awaiter(void 0, void 0, void 0, function* () {
         try {
-            console.log(socket.id);
             // validation
             if (!message.token || !message.roomId || !message.text) {
+                console.log(1);
                 return socket.disconnect();
             }
             const { token, roomId, text } = message;
@@ -85,11 +82,13 @@ io.on('connection', (socket) => {
                 oneToOneChat_model_1.default.findById(roomId)
             ]);
             if (!user || !room) {
+                console.log(2);
+                console.log(user, room);
                 return socket.disconnect();
             }
             if (room.userOne.toString() !== decoded._id
                 && room.userTwo.toString() !== decoded._id) {
-                console.log("ssssss");
+                console.log(3);
                 return socket.disconnect();
             }
             const filter = new Filter();
@@ -97,11 +96,12 @@ io.on('connection', (socket) => {
                 return callback('Profanity is not allowed');
             }
             else {
+                // function from utils directory
                 const generatedMessage = generateMessage(text, user.name);
                 room.messages.push(generatedMessage);
                 yield room.save();
                 //sends the message for all clients
-                io.to(room._id.toString()).emit('message', generatedMessage);
+                io.to(room._id.toString()).emit('message', "message");
                 return callback && callback();
             }
         }

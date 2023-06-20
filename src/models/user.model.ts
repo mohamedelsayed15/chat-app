@@ -67,6 +67,11 @@ const schema = new mongoose.Schema<IUserDocument> ({
             type: mongoose.Types.ObjectId,
             required: true,
             ref: 'User'
+        },
+        roomId: {
+            type: mongoose.Types.ObjectId,
+            required: true,
+            ref: 'RoomOneToOne'
         }
     }],
     connectRequests: [{
