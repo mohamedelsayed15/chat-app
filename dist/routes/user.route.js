@@ -6,4 +6,5 @@ const userController = require('../controllers/user.controller');
 const router = (0, express_1.Router)();
 router.post('/send-request-to-connect', auth_1.auth, userController.requestToConnectWithOtherUser);
 router.post('/accept-request-to-connect', auth_1.auth, userController.acceptRequestToConnect);
+router.get('/search-users', auth_1.auth, userController.searchUsers);
 exports.default = router;

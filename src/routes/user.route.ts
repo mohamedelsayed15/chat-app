@@ -15,6 +15,9 @@ router.post(
     auth,
     userController.acceptRequestToConnect
     )
-
-
+router.get(
+    '/search-users',
+    auth,
+    userController.searchUsers
+)
 export default router

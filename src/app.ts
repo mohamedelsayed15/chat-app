@@ -4,6 +4,8 @@ import http from 'http'
 import cors from 'cors'
 import authRoutes from './routes/auth.route'
 import userRoutes from './routes/user.route'
+import roomRoutes from './routes/room.route'
+
 import { jwtVerify } from "./middleware/auth"
 import { User } from "./models/user.model"
 import RoomOneToOne from "./models/oneToOneChat.model"
@@ -25,12 +27,11 @@ app.use(express.static(path.join(__dirname, '../public')))
 
 app.use('/auth', authRoutes)
 app.use('/user', userRoutes)
+app.use('/room', roomRoutes)
 
 app.get('/', (req, res, next) => {
     res.render('../public/index.html')
 })
-
-
 // sends a message for the client connection
         //socket.emit('message',generateMessage('Welcome!'))
         // sends a message for all clients except the one triggered it 

@@ -18,6 +18,7 @@ const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const auth_route_1 = __importDefault(require("./routes/auth.route"));
 const user_route_1 = __importDefault(require("./routes/user.route"));
+const room_route_1 = __importDefault(require("./routes/room.route"));
 const auth_1 = require("./middleware/auth");
 const user_model_1 = require("./models/user.model");
 const oneToOneChat_model_1 = __importDefault(require("./models/oneToOneChat.model"));
@@ -34,6 +35,7 @@ const io = socketio(server);
 app.use(express_1.default.static(path_1.default.join(__dirname, '../public')));
 app.use('/auth', auth_route_1.default);
 app.use('/user', user_route_1.default);
+app.use('/room', room_route_1.default);
 app.get('/', (req, res, next) => {
     res.render('../public/index.html');
 });
@@ -51,17 +53,14 @@ io.on('connection', (socket) => {
             }
             const { token } = data;
             const decoded = yield (0, auth_1.jwtVerify)(token);
-            console.log(decoded);
             const user = yield user_model_1.User.findById(decoded._id);
-            console.log(user);
             if (!user || user.contacts.length === 0) {
-                console.log("no user or contacts");
                 return;
             }
             for (let i = 0; i < user.contacts.length; i++) {
                 socket.join(user.contacts[i].roomId.toString());
             }
-            return callback && callback("joined");
+            return callback && callback();
         }
         catch (e) {
             console.log(e);
@@ -82,13 +81,10 @@ io.on('connection', (socket) => {
                 oneToOneChat_model_1.default.findById(roomId)
             ]);
             if (!user || !room) {
-                console.log(2);
-                console.log(user, room);
                 return socket.disconnect();
             }
             if (room.userOne.toString() !== decoded._id
                 && room.userTwo.toString() !== decoded._id) {
-                console.log(3);
                 return socket.disconnect();
             }
             const filter = new Filter();
@@ -101,7 +97,7 @@ io.on('connection', (socket) => {
                 room.messages.push(generatedMessage);
                 yield room.save();
                 //sends the message for all clients
-                io.to(room._id.toString()).emit('message', "message");
+                io.to(room._id.toString()).emit('message', generatedMessage);
                 return callback && callback();
             }
         }

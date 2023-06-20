@@ -103,3 +103,26 @@ exports.acceptRequestToConnect = (req, res, next) => __awaiter(void 0, void 0, v
         console.log(e);
     }
 });
+exports.searchUsers = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const keyword = req.query.keyword;
+        const page = 1; // Current page number
+        const limit = 10; // Number of results per page
+        const skipCount = (page - 1) * limit;
+        const users = yield user_model_1.User.find({
+            $or: [
+                { name: { $regex: new RegExp(keyword, 'i') } },
+                { email: { $regex: new RegExp(keyword, 'i') } }
+            ]
+        })
+            .select('contacts _id name email')
+            .skip(skipCount)
+            .limit(limit);
+        res.json({
+            users
+        });
+    }
+    catch (e) {
+        console.log(e);
+    }
+});

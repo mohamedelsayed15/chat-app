@@ -86,12 +86,6 @@ const schema = new mongoose.Schema<IUserDocument> ({
 }, {
     timestamps: true
 })
-//virtual tasks field for .populate()
-schema.virtual('chat', {
-    ref: 'Chat',
-    localField: '_id',
-    foreignField:'owner'
-})
 
 //login by credentials
 schema.statics.findByCredentials = async (email:string, password:string) => {

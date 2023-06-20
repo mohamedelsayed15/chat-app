@@ -77,12 +77,6 @@ const schema = new mongoose_1.default.Schema({
 }, {
     timestamps: true
 });
-//virtual tasks field for .populate()
-schema.virtual('chat', {
-    ref: 'Chat',
-    localField: '_id',
-    foreignField: 'owner'
-});
 //login by credentials
 schema.statics.findByCredentials = (email, password) => __awaiter(void 0, void 0, void 0, function* () {
     const user = yield exports.User.findOne({ email });
